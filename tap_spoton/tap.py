@@ -5,10 +5,11 @@ from typing import List
 from hotglue_tap_sdk import Stream, Tap
 from hotglue_tap_sdk import typing as th
 
-from tap_spoton.streams import LocationsStream, OrdersStream
+from tap_spoton.streams import LocationsStream, LocationsDetailsStream, OrdersStream
 
 STREAM_TYPES = [
     LocationsStream,
+    LocationsDetailsStream,
     OrdersStream,
 ]
 
@@ -20,12 +21,12 @@ class TapSpotOn(Tap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "username",
+            "client_id",
             th.StringType,
             required=True,
         ),
         th.Property(
-            "password",
+            "client_secret",
             th.StringType,
             required=True,
         ),

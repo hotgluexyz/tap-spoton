@@ -17,7 +17,7 @@ class SpotOnAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
 
     def request_auth(self) -> tuple[str, str]:
         """Return the authentication credentials for the request."""
-        return (self.config["username"], self.config["password"])
+        return (self.config["client_id"], self.config["client_secret"])
 
     @classmethod
     def create_for_stream(cls, stream) -> "SpotOnAuthenticator":

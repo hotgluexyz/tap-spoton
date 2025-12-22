@@ -13,6 +13,7 @@ class SpotOnStream(RESTStream):
     """SpotOn stream class."""
 
     url_base = "https://api.spoton.com/"
+    pagination = True
 
     @property
     @cached
@@ -32,6 +33,9 @@ class SpotOnStream(RESTStream):
         self, response: requests.Response, previous_token: Optional[Any]
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
+        if not self.pagination:
+            return None
+
         previous_token = previous_token or 1
         if response.json().get("pagination").get("total_pages") > previous_token:
             return previous_token + 1

@@ -5,6 +5,7 @@ from typing import Iterable, Optional
 from hotglue_tap_sdk import typing as th
 
 from tap_spoton.client import SpotOnStream
+from tap_spoton.schema_helpers.day_times import day_times
 
 
 class LocationsStream(SpotOnStream):
@@ -27,6 +28,77 @@ class LocationsStream(SpotOnStream):
     def get_child_context(self, record: dict, context: Optional[dict] = None) -> dict:
         """Get child context from the API."""
         return {"location_id": record["id"]}
+
+
+class LocationsDetailsStream(SpotOnStream):
+    """Define custom stream."""
+
+    name = "locations_details"
+    path = "business/v1/locations/{location_id}"
+    primary_keys = ["id"]
+    parent_stream_type = LocationsStream
+    records_jsonpath = "$.location"
+    pagination = False
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("email", th.StringType),
+        th.Property("phone", th.StringType),
+        th.Property(
+            "address",
+            th.ObjectType(
+                th.Property("address_line_1", th.StringType),
+                th.Property("address_line_2", th.StringType),
+                th.Property("city", th.StringType),
+                th.Property("state", th.StringType),
+                th.Property("zip", th.StringType),
+                th.Property("country", th.StringType),
+            ),
+        ),
+        th.Property(
+            "geolocation",
+            th.ObjectType(
+                th.Property("latitude", th.NumberType),
+                th.Property("longitude", th.NumberType),
+            ),
+        ),
+        th.Property("timezone", th.StringType),
+        th.Property(
+            "business_hours",
+            th.ObjectType(
+                th.Property(
+                    "day_times",
+                    day_times,
+                )
+            ),
+        ),
+        th.Property(
+            "business_special_hours",
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property(
+                        "date",
+                        th.ObjectType(
+                            th.Property("year", th.IntegerType),
+                            th.Property("month", th.IntegerType),
+                            th.Property("day", th.IntegerType),
+                        ),
+                    ),
+                    th.Property("is_unavailable", th.BooleanType),
+                    th.Property(
+                        "schedule",
+                        th.ObjectType(
+                            th.Property(
+                                "day_times",
+                                day_times,
+                            )
+                        ),
+                    ),
+                )
+            ),
+        )
+    ).to_dict()
 
 
 class OrdersStream(SpotOnStream):
