@@ -50,6 +50,6 @@ class SpotOnStream(RESTStream):
         if next_page_token:
             params["page"] = next_page_token
         if self.replication_key:
-            start_date = self.get_starting_time(context)
+            start_date = self.get_starting_time(context, is_inclusive=True)
             params["last_updated_from"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         return params
