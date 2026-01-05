@@ -5,7 +5,8 @@ from typing import Iterable, Optional
 from hotglue_tap_sdk import typing as th
 
 from tap_spoton.client import SpotOnStream
-from tap_spoton.schema_helpers.day_times import day_times
+from tap_spoton.schema_helpers.schedules import day_times, schedule, schedule_overrides
+from tap_spoton.schema_helpers.prices import prices
 
 
 class LocationsStream(SpotOnStream):
@@ -88,12 +89,7 @@ class LocationsDetailsStream(SpotOnStream):
                     th.Property("is_unavailable", th.BooleanType),
                     th.Property(
                         "schedule",
-                        th.ObjectType(
-                            th.Property(
-                                "day_times",
-                                day_times,
-                            )
-                        ),
+                        schedule,
                     ),
                 )
             ),
@@ -219,4 +215,113 @@ class OrdersStream(SpotOnStream):
         ),
         th.Property("table_number", th.StringType),
         th.Property("guest_count", th.IntegerType),
+    ).to_dict()
+
+
+class MenusStream(SpotOnStream):
+    """Define orders stream."""
+
+    name = "menus"
+    path = "menu/v1/locations/{location_id}/menus"
+    primary_keys = ["id"]
+    parent_stream_type = LocationsStream
+    records_jsonpath = "$.menus[*]"
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("location_id", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("active", th.BooleanType),
+        th.Property(
+            "schedule",
+            schedule,
+        ),
+        th.Property(
+            "schedule_overrides",
+            schedule_overrides,
+        ),
+        th.Property(
+            "categories",
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property("id", th.StringType),
+                    th.Property("name", th.StringType),
+                    th.Property("description", th.StringType),
+                    th.Property("active", th.BooleanType),
+                    th.Property("sort_order", th.IntegerType),
+                )
+            ),
+        ),
+        th.Property("created_at", th.DateTimeType),
+    ).to_dict()
+
+    def get_child_context(self, record: dict, context: Optional[dict] = None) -> dict:
+        """Get child context from the API."""
+        return {"menu_id": record["id"], "location_id": context["location_id"]}
+
+
+class MenuItemsStream(SpotOnStream):
+    """Define menu items stream."""
+
+    name = "menu_items"
+    path = "menu/v1/locations/{location_id}/menus/{menu_id}/items"
+    primary_keys = ["id"]
+    parent_stream_type = MenusStream
+    records_jsonpath = "$.items[*]"
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("location_id", th.StringType),
+        th.Property("menu_id", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("description", th.StringType),
+        th.Property("active", th.BooleanType),
+        th.Property("is_available", th.BooleanType),
+        th.Property("image_url", th.StringType),
+        th.Property(
+            "price",
+            prices,
+        ),
+        th.Property("is_alcohol", th.BooleanType),
+        th.Property("sort_order", th.IntegerType),
+        # schedule can be null
+        th.Property(
+            "schedule",
+            schedule,
+        ),
+        th.Property(
+            "category_references",
+            th.ArrayType(th.ObjectType(
+                th.Property("category_id", th.StringType),
+                th.Property("sort_order", th.IntegerType),
+                th.Property("price", prices),
+                th.Property("schedule", schedule),
+                th.Property("schedule_overrides", schedule_overrides),
+            )),
+        ),
+        th.Property(
+            "category_ids",
+            th.ArrayType(th.StringType),
+        ),
+        th.Property(
+            "taxes",
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property("id", th.StringType),
+                    th.Property("name", th.StringType),
+                    th.Property("percent_rate", th.IntegerType),
+                    th.Property("include_in_price", th.BooleanType),
+                )
+            ),
+        ),
+        th.Property(
+            "modifier_groups",
+            th.ArrayType(th.CustomType({"type": ["object", "string"]})),
+        ),
+        th.Property(
+            "item_groups",
+            th.ArrayType(th.CustomType({"type": ["object", "string"]})),
+        ),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("thumbnail_url", th.StringType),
     ).to_dict()
