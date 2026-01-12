@@ -265,7 +265,7 @@ class MenuItemsStream(SpotOnStream):
 
     name = "menu_items"
     path = "menu/v1/locations/{location_id}/menus/{menu_id}/items"
-    primary_keys = ["id"]
+    primary_keys = ["id", "menu_id", "location_id"]
     parent_stream_type = MenusStream
     records_jsonpath = "$.items[*]"
 
