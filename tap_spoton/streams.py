@@ -5,7 +5,12 @@ from typing import Iterable, Optional
 from hotglue_tap_sdk import typing as th
 
 from tap_spoton.client import SpotOnStream
-from tap_spoton.schema_helpers.schedules import day_times, schedule, schedule_overrides
+from tap_spoton.schema_helpers.schedules import (
+    apply_schedule_normalization,
+    day_times,
+    schedule,
+    schedule_overrides,
+)
 from tap_spoton.schema_helpers.prices import prices
 
 
@@ -259,6 +264,10 @@ class MenusStream(SpotOnStream):
         """Get child context from the API."""
         return {"menu_id": record["id"], "location_id": context["location_id"]}
 
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+        """Normalize menu schedule string times before schema validation."""
+        return apply_schedule_normalization(row)
+
 
 class MenuItemsStream(SpotOnStream):
     """Define menu items stream."""
@@ -325,3 +334,10 @@ class MenuItemsStream(SpotOnStream):
         th.Property("created_at", th.DateTimeType),
         th.Property("thumbnail_url", th.StringType),
     ).to_dict()
+
+    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+        """Normalize schedule string times on items and category references."""
+        apply_schedule_normalization(row)
+        for category_ref in row.get("category_references") or []:
+            apply_schedule_normalization(category_ref)
+        return row
