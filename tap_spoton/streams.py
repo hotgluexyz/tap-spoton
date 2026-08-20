@@ -5,7 +5,12 @@ from typing import Iterable, Optional
 from hotglue_tap_sdk import typing as th
 
 from tap_spoton.client import SpotOnStream
-from tap_spoton.schema_helpers.schedules import day_times, schedule, schedule_overrides
+from tap_spoton.schema_helpers.schedules import (
+    day_times_object,
+    schedule_object,
+    schedule_overrides_string,
+    schedule_string,
+)
 from tap_spoton.schema_helpers.prices import prices
 
 
@@ -70,7 +75,7 @@ class LocationsDetailsStream(SpotOnStream):
             th.ObjectType(
                 th.Property(
                     "day_times",
-                    day_times,
+                    day_times_object,
                 )
             ),
         ),
@@ -89,7 +94,7 @@ class LocationsDetailsStream(SpotOnStream):
                     th.Property("is_unavailable", th.BooleanType),
                     th.Property(
                         "schedule",
-                        schedule,
+                        schedule_object,
                     ),
                 )
             ),
@@ -234,11 +239,11 @@ class MenusStream(SpotOnStream):
         th.Property("active", th.BooleanType),
         th.Property(
             "schedule",
-            schedule,
+            schedule_string,
         ),
         th.Property(
             "schedule_overrides",
-            schedule_overrides,
+            schedule_overrides_string,
         ),
         th.Property(
             "categories",
@@ -287,7 +292,7 @@ class MenuItemsStream(SpotOnStream):
         # schedule can be null
         th.Property(
             "schedule",
-            schedule,
+            schedule_string,
         ),
         th.Property(
             "category_references",
@@ -295,8 +300,8 @@ class MenuItemsStream(SpotOnStream):
                 th.Property("category_id", th.StringType),
                 th.Property("sort_order", th.IntegerType),
                 th.Property("price", prices),
-                th.Property("schedule", schedule),
-                th.Property("schedule_overrides", schedule_overrides),
+                th.Property("schedule", schedule_string),
+                th.Property("schedule_overrides", schedule_overrides_string),
             )),
         ),
         th.Property(
