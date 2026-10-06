@@ -12,7 +12,7 @@ from tap_spoton.schema_helpers.schedules import (
     schedule_string,
 )
 from tap_spoton.schema_helpers.prices import prices
-
+from tap_spoton.schema_helpers.orders import taxes_schema, line_items_schema
 
 class LocationsStream(SpotOnStream):
     """Define custom stream."""
@@ -48,6 +48,7 @@ class LocationsDetailsStream(SpotOnStream):
 
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
+        th.Property("location_id", th.StringType),
         th.Property("name", th.StringType),
         th.Property("email", th.StringType),
         th.Property("phone", th.StringType),
@@ -120,44 +121,28 @@ class OrdersStream(SpotOnStream):
         th.Property(
             "line_items",
             th.ArrayType(
-                th.ObjectType(
-                    th.Property("id", th.StringType),
-                    th.Property("name", th.StringType),
-                    th.Property("quantity", th.NumberType),
-                    th.Property("price", th.NumberType),
-                    th.Property(
-                        "modifiers",
-                        th.ArrayType(
-                            th.ObjectType(
-                                th.Property("id", th.StringType),
-                                th.Property("name", th.StringType),
-                                th.Property("quantity", th.NumberType),
-                                th.Property("price", th.NumberType),
-                                th.Property("prefix", th.StringType),
-                            )
-                        ),
-                    ),
-                    th.Property(
-                        "applicable_taxes",
-                        th.ArrayType(
-                            th.ObjectType(
-                                th.Property("tax_id", th.StringType),
-                                th.Property("tax_amount", th.NumberType),
-                            )
-                        ),
-                    ),
-                    th.Property("order_item_id", th.StringType),
-                )
+                line_items_schema,
             ),
         ),
         th.Property(
             "payments",
             th.ArrayType(
                 th.ObjectType(
+                    th.Property("id", th.StringType),
                     th.Property("type", th.StringType),
                     th.Property("amount", th.NumberType),
                     th.Property("is_refund", th.BooleanType),
                     th.Property("is_void", th.BooleanType),
+                    th.Property("order_payment_id", th.StringType),
+                    th.Property("card_type", th.StringType),
+                    th.Property("tips_amount", th.NumberType),
+                    th.Property("tip_deduction_amount", th.NumberType),
+                    th.Property("fees_amount", th.NumberType),
+                    th.Property("surcharges", th.ArrayType(th.ObjectType(
+                        th.Property("id", th.StringType),
+                        th.Property("name", th.StringType),
+                        th.Property("amount", th.NumberType),
+                    ))),
                 )
             ),
         ),
@@ -180,6 +165,17 @@ class OrdersStream(SpotOnStream):
                 th.Property("inclusive_taxes_amount", th.NumberType),
                 th.Property("exclusive_taxes_amount", th.NumberType),
                 th.Property("has_returns", th.BooleanType),
+                th.Property("items_discounts_amount", th.NumberType),
+                th.Property("liabilities_discounts_amount", th.NumberType),
+                th.Property("credit_card_surcharges_amount", th.NumberType),
+                th.Property("rounding_amount", th.NumberType),
+                th.Property("revenue_amount", th.NumberType),
+                th.Property("taxes_collected_amount", th.NumberType),
+                th.Property("inclusive_taxes_collected_amount", th.NumberType),
+                th.Property("exclusive_taxes_collected_amount", th.NumberType),
+                th.Property("facilitator_tax_adjustment_amount", th.NumberType),
+                th.Property("payments_collected_amount", th.NumberType),
+                th.Property("payments_uncollected_amount", th.NumberType),
             ),
         ),
         th.Property(
@@ -189,6 +185,10 @@ class OrdersStream(SpotOnStream):
                     th.Property("id", th.StringType),
                     th.Property("name", th.StringType),
                     th.Property("amount", th.NumberType),
+                    th.Property("order_discount_id", th.StringType),
+                    th.Property("discount_reason", th.StringType),
+                    th.Property("parent_id", th.StringType),
+                    th.Property("parent_type", th.StringType),
                 )
             ),
         ),
@@ -198,12 +198,7 @@ class OrdersStream(SpotOnStream):
         th.Property(
             "taxes",
             th.ArrayType(
-                th.ObjectType(
-                    th.Property("id", th.StringType),
-                    th.Property("name", th.StringType),
-                    th.Property("amount", th.NumberType),
-                    th.Property("percentage", th.NumberType),
-                )
+                taxes_schema,
             ),
         ),
         th.Property(
@@ -220,6 +215,59 @@ class OrdersStream(SpotOnStream):
         ),
         th.Property("table_number", th.StringType),
         th.Property("guest_count", th.IntegerType),
+        th.Property("fiscal_date", th.DateType),
+        th.Property("order_time_zone", th.StringType),
+        th.Property("order_type", th.StringType),
+        th.Property("original_order_id", th.StringType),
+        th.Property("original_order_number", th.StringType),
+        th.Property("open_daypart", th.StringType),
+        th.Property("station_id", th.StringType),
+        th.Property("released_at", th.DateTimeType),
+        th.Property("liabilities", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("amount", th.NumberType),
+            th.Property("quantity", th.NumberType),
+        ))),
+        th.Property("voided_line_items", th.ArrayType(line_items_schema)),
+        th.Property("checks", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("payments_uncollected", th.NumberType),
+            th.Property("gratuity_amount", th.NumberType),
+            th.Property("auto_gratuity_taxes", th.ArrayType(
+                th.ObjectType(
+                    th.Property("tax_id", th.StringType),
+                    th.Property("tax_name", th.StringType),
+                    th.Property("percentage", th.NumberType),
+                    th.Property("amount", th.NumberType),
+                )
+            )),
+            th.Property("guests", th.ArrayType(
+                th.ObjectType(
+                    th.Property("id", th.StringType),
+                    th.Property("name", th.StringType),
+                    th.Property("check_id", th.StringType),
+                    th.Property("items", th.ArrayType(line_items_schema)),
+                    th.Property("void_items", th.ArrayType(line_items_schema)),
+                )
+            )),
+        ))),
+        th.Property("fees", th.ArrayType(th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("order_fee_id", th.StringType),
+        ))),
+        th.Property("customer", th.ObjectType(
+            th.Property("id", th.StringType),
+            th.Property("first_name", th.StringType),
+            th.Property("last_name", th.StringType),
+            th.Property("email", th.StringType),
+            th.Property("phone", th.StringType),
+            th.Property("address", th.StringType),
+            th.Property("city", th.StringType),
+            th.Property("state", th.StringType),
+            th.Property("zip", th.StringType),
+        )),
     ).to_dict()
 
 
