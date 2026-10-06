@@ -48,6 +48,7 @@ class LocationsDetailsStream(SpotOnStream):
 
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
+        th.Property("location_id", th.StringType),
         th.Property("name", th.StringType),
         th.Property("email", th.StringType),
         th.Property("phone", th.StringType),
