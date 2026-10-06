@@ -234,7 +234,14 @@ class OrdersStream(SpotOnStream):
             th.Property("id", th.StringType),
             th.Property("payments_uncollected", th.NumberType),
             th.Property("gratuity_amount", th.NumberType),
-            th.Property("auto_gratuity_taxes", th.StringType),
+            th.Property("auto_gratuity_taxes", th.ArrayType(
+                th.ObjectType(
+                    th.Property("tax_id", th.StringType),
+                    th.Property("tax_name", th.StringType),
+                    th.Property("percentage", th.NumberType),
+                    th.Property("amount", th.NumberType),
+                )
+            )),
             th.Property("guests", th.ArrayType(
                 th.ObjectType(
                     th.Property("id", th.StringType),

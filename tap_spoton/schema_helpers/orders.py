@@ -1,8 +1,18 @@
 from hotglue_tap_sdk import typing as th
 
-taxes_schema =  th.ObjectType(
+applicable_taxes_schema =  th.ObjectType(
     th.Property("tax_id", th.StringType),
     th.Property("tax_amount", th.NumberType),
+    th.Property("is_inclusive", th.BooleanType),
+    th.Property("parent_id", th.StringType),
+    th.Property("parent_type", th.StringType),
+)
+
+taxes_schema = th.ObjectType(
+    th.Property("id", th.StringType),
+    th.Property("name", th.StringType),
+    th.Property("amount", th.NumberType),
+    th.Property("percentage", th.NumberType),
     th.Property("is_inclusive", th.BooleanType),
     th.Property("parent_id", th.StringType),
     th.Property("parent_type", th.StringType),
@@ -32,7 +42,7 @@ line_items_schema = th.ObjectType(
     ),
     th.Property(
         "applicable_taxes",
-        th.ArrayType(taxes_schema),
+        th.ArrayType(applicable_taxes_schema),
     ),
     th.Property("order_item_id", th.StringType),
     th.Property("gross_sales_amount", th.NumberType),
