@@ -49,5 +49,5 @@ line_items_schema = th.ObjectType(
     th.Property("net_sales_amount", th.NumberType),
     th.Property("inclusive_taxes_amount", th.NumberType),
     th.Property("exclusive_taxes_amount", th.NumberType),
-    th.Property("void", th.BooleanType),
+    th.Property("void", th.CustomType({"type": ["object", "boolean"]})),
 )
