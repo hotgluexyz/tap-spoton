@@ -37,6 +37,10 @@ line_items_schema = th.ObjectType(
                 th.Property("inclusive_taxes_amount", th.NumberType),
                 th.Property("exclusive_taxes_amount", th.NumberType),
                 th.Property("discounts_amount", th.NumberType),
+                th.Property("reporting_category_id", th.StringType),
+                th.Property("reporting_category_name", th.StringType),
+                th.Property("parent_reporting_category_id", th.StringType),
+                th.Property("parent_reporting_category_name", th.StringType),
             )
         ),
     ),

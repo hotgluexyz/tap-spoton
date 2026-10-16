@@ -143,6 +143,7 @@ class OrdersStream(SpotOnStream):
                         th.Property("name", th.StringType),
                         th.Property("amount", th.NumberType),
                     ))),
+                    th.Property("sub_type", th.StringType),
                 )
             ),
         ),
