@@ -5,7 +5,16 @@ from typing import List
 from hotglue_tap_sdk import Stream, Tap
 from hotglue_tap_sdk import typing as th
 
-from tap_spoton.streams import LocationsStream, LocationsDetailsStream, OrdersStream, MenusStream, MenuItemsStream
+from tap_spoton.streams import (
+    LocationsStream,
+    LocationsDetailsStream,
+    MenuItemsStream,
+    MenusStream,
+    OrdersStream,
+    PaidInOutsStream,
+    TillsStream,
+    VirtualTerminalTransactionsStream,
+)
 
 STREAM_TYPES = [
     LocationsStream,
@@ -13,6 +22,9 @@ STREAM_TYPES = [
     OrdersStream,
     MenusStream,
     MenuItemsStream,
+    PaidInOutsStream,
+    TillsStream,
+    VirtualTerminalTransactionsStream,
 ]
 
 
