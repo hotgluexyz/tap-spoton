@@ -442,7 +442,7 @@ class TillsStream(SpotOnStream):
     When a cashier closes out, SpotOn records what cash should be in the drawer
     versus what was counted. Each closed session is one till. Open drawers are
     not included. Express POS only — Restaurant POS (RPOS) locations do not
-    support tills. One 
+    support tills. 
     """
 
     name = "tills"
@@ -470,7 +470,7 @@ class TillsStream(SpotOnStream):
 
     def validate_response(self, response: requests.Response) -> None:
         if response.status_code == 400 and "tills are not supported" in response.text:
-            # avoid to fail the whole sync due to missing scope for the creds
+            # avoid to fail the whole sync when tills is not supported
             response.status_code = 200
             response._content = b'{"tills":[],"pagination":{"total_pages":0}}'
             return
