@@ -384,7 +384,17 @@ class MenuItemsStream(SpotOnStream):
 
 
 class PaidInOutsStream(SpotOnStream):
-    """Paid-ins and paid-outs for a location (full table by fiscal date)."""
+    """
+    Paid-ins and paid-outs for a location (full table by fiscal date).
+
+    Cash added (paid-in) to or removed (paid-out) from the register that is not a sale or refund.
+
+    A paid-in is money put into the drawer for non-sale reasons (e.g. starting change, a catering deposit). 
+    A paid-out is money taken out (e.g. petty cash, paying a vendor). 
+    
+    SpotOn also records cash deposits (drops to a safe). 
+    Staff pick a reason and optional comment when they do this on the POS.
+    """
 
     name = "paid_in_outs"
     path = "reporting/v1/locations/{location_id}/paid-in-outs"
@@ -424,7 +434,16 @@ class PaidInOutsStream(SpotOnStream):
 
 
 class TillsStream(SpotOnStream):
-    """Closed cash drawer sessions for a location."""
+    """
+    Closed cash drawer sessions for a location.
+
+    A till is one cash-drawer shift: open the drawer, take cash all day, close it.
+
+    When a cashier closes out, SpotOn records what cash should be in the drawer
+    versus what was counted. Each closed session is one till. Open drawers are
+    not included. Express POS only — Restaurant POS (RPOS) locations do not
+    support tills. One 
+    """
 
     name = "tills"
     path = "reporting/v1/locations/{location_id}/tills"
@@ -459,7 +478,15 @@ class TillsStream(SpotOnStream):
 
 
 class VirtualTerminalTransactionsStream(SpotOnStream):
-    """Virtual terminal transaction events for a location."""
+    """
+    Virtual terminal transaction events for a location.
+
+    Card charges taken through SpotOn's virtual terminal (keyed-in payments).
+
+    Used when there is no physical card reader — staff enter card details on a
+    screen (phone orders, invoices, remote payments). Each record is an event
+    such as a sale, void, or refund, with amounts and card brand.
+    """
 
     name = "virtual_terminal_transactions"
     path = "reporting/v1/locations/{location_id}/virtual-terminal-transactions"
