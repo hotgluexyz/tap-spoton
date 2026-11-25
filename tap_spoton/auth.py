@@ -24,5 +24,8 @@ class SpotOnAuthenticator(OAuthAuthenticator, metaclass=SingletonMeta):
         return cls(
             stream=stream,
             auth_endpoint="https://api.spoton.com/oauth2/v1/token",
-            oauth_scopes="reporting:orders:read business:all:read menu:all:read",
+            oauth_scopes=(
+                "reporting:orders:read business:all:read menu:all:read "
+                "reporting:cashmanagement:read reporting:virtualterminal:read"
+            ),
         )

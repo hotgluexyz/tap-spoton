@@ -1,7 +1,9 @@
 """Stream type classes for tap-spoton."""
 
-from typing import Iterable, Optional
+from datetime import date
+from typing import Any, Dict, Iterable, Optional
 
+import requests
 from hotglue_tap_sdk import typing as th
 
 from tap_spoton.client import SpotOnStream
@@ -379,3 +381,152 @@ class MenuItemsStream(SpotOnStream):
         th.Property("created_at", th.DateTimeType),
         th.Property("thumbnail_url", th.StringType),
     ).to_dict()
+
+
+class PaidInOutsStream(SpotOnStream):
+    """
+    Paid-ins and paid-outs for a location (full table by fiscal date).
+
+    Cash added (paid-in) to or removed (paid-out) from the register that is not a sale or refund.
+
+    A paid-in is money put into the drawer for non-sale reasons (e.g. starting change, a catering deposit). 
+    A paid-out is money taken out (e.g. petty cash, paying a vendor). 
+    
+    SpotOn also records cash deposits (drops to a safe). 
+    Staff pick a reason and optional comment when they do this on the POS.
+    """
+
+    name = "paid_in_outs"
+    path = "reporting/v1/locations/{location_id}/paid-in-outs"
+    primary_keys = ["id"]
+    parent_stream_type = LocationsStream
+    records_jsonpath = "$.paid_in_outs[*]"
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("location_id", th.StringType),
+        th.Property("pos_system", th.StringType),
+        th.Property("activity_type", th.StringType),
+        th.Property("tender_type", th.StringType),
+        th.Property("amount", th.NumberType),
+        th.Property("currency_code", th.StringType),
+        th.Property("occurred_at", th.DateTimeType),
+        th.Property("business_date", th.DateType),
+        th.Property("reason", th.StringType),
+        th.Property("comment", th.StringType),
+        th.Property("drawer_id", th.StringType),
+        th.Property("drawer_session_id", th.StringType),
+        th.Property("terminal_id", th.StringType),
+        th.Property("employee_id", th.StringType),
+        th.Property("status", th.StringType),
+        th.Property("last_updated_at", th.DateTimeType),
+    ).to_dict()
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        params = super().get_url_params(context, next_page_token)
+        start_date = self.config.get("start_date", "2000-01-01")
+        if isinstance(start_date, str):
+            params["fiscal_date_from"] = start_date[:10]
+        params["fiscal_date_to"] = date.today().isoformat()
+        return params
+
+
+class TillsStream(SpotOnStream):
+    """
+    Closed cash drawer sessions for a location.
+
+    A till is one cash-drawer shift: open the drawer, take cash all day, close it.
+
+    When a cashier closes out, SpotOn records what cash should be in the drawer
+    versus what was counted. Each closed session is one till. Open drawers are
+    not included. Express POS only — Restaurant POS (RPOS) locations do not
+    support tills. 
+    """
+
+    name = "tills"
+    path = "reporting/v1/locations/{location_id}/tills"
+    primary_keys = ["drawer_session_id"]
+    replication_key = "last_updated_at"
+    parent_stream_type = LocationsStream
+    records_jsonpath = "$.tills[*]"
+
+    schema = th.PropertiesList(
+        th.Property("drawer_session_id", th.StringType),
+        th.Property("location_id", th.StringType),
+        th.Property("terminal_id", th.StringType),
+        th.Property("business_date", th.DateType),
+        th.Property("opened_at", th.DateTimeType),
+        th.Property("closed_at", th.DateTimeType),
+        th.Property("opened_by_employee_id", th.StringType),
+        th.Property("closed_by_employee_id", th.StringType),
+        th.Property("closed_by_manager_id", th.StringType),
+        th.Property("expected_cash_amount", th.NumberType),
+        th.Property("actual_cash_amount", th.NumberType),
+        th.Property("is_counted", th.BooleanType),
+        th.Property("last_updated_at", th.DateTimeType),
+    ).to_dict()
+
+    def validate_response(self, response: requests.Response) -> None:
+        if response.status_code == 400 and "tills are not supported" in response.text:
+            # avoid to fail the whole sync when tills is not supported
+            response.status_code = 200
+            response._content = b'{"tills":[],"pagination":{"total_pages":0}}'
+            return
+        super().validate_response(response)
+
+
+class VirtualTerminalTransactionsStream(SpotOnStream):
+    """
+    Virtual terminal transaction events for a location.
+
+    Card charges taken through SpotOn's virtual terminal (keyed-in payments).
+
+    Used when there is no physical card reader — staff enter card details on a
+    screen (phone orders, invoices, remote payments). Each record is an event
+    such as a sale, void, or refund, with amounts and card brand.
+    """
+
+    name = "virtual_terminal_transactions"
+    path = "reporting/v1/locations/{location_id}/virtual-terminal-transactions"
+    primary_keys = ["event_id"]
+    parent_stream_type = LocationsStream
+    records_jsonpath = "$.transactions[*]"
+
+    schema = th.PropertiesList(
+        th.Property("location_id", th.StringType),
+        th.Property("transaction_id", th.StringType),
+        th.Property("event_id", th.StringType),
+        th.Property("parent_transaction_id", th.StringType),
+        th.Property("event_type", th.StringType),
+        th.Property("business_date", th.DateType),
+        th.Property("merchant_timezone", th.StringType),
+        th.Property("occurred_at", th.DateTimeType),
+        th.Property("tender", th.StringType),
+        th.Property("card_brand", th.StringType),
+        th.Property("is_void", th.BooleanType),
+        th.Property("is_refund", th.BooleanType),
+        th.Property("sale_amount", th.NumberType),
+        th.Property("tip_amount", th.NumberType),
+        th.Property("tax_amount", th.NumberType),
+        th.Property("surcharge_amount", th.NumberType),
+        th.Property("discount_amount", th.NumberType),
+        th.Property("shipping_amount", th.NumberType),
+        th.Property("convenience_fee_amount", th.NumberType),
+        th.Property("total_charged_amount", th.NumberType),
+        th.Property("cash_discount_amount", th.NumberType),
+        th.Property("gift_card_sale_amount", th.NumberType),
+    ).to_dict()
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        params = super().get_url_params(context, next_page_token)
+        start_date = self.config.get("start_date", "2000-01-01")
+        if isinstance(start_date, str):
+            params["fiscal_date_from"] = start_date[:10]
+        params["fiscal_date_to"] = date.today().isoformat()
+        return params
+
+
