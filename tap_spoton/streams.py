@@ -449,25 +449,13 @@ class TillsStream(SpotOnStream):
         th.Property("last_updated_at", th.DateTimeType),
     ).to_dict()
 
-    def _is_rpos_unsupported(self, response: requests.Response) -> bool:
-        return response.status_code == 400 and "tills are not supported" in response.text
-
     def validate_response(self, response: requests.Response) -> None:
-        if self._is_rpos_unsupported(response):
+        if response.status_code == 400 and "tills are not supported" in response.text:
+            # avoid to fail the whole sync due to missing scope for the creds
+            response.status_code = 200
+            response._content = b'{"tills":[],"pagination":{"total_pages":0}}'
             return
         super().validate_response(response)
-
-    def parse_response(self, response: requests.Response) -> Iterable[dict]:
-        if self._is_rpos_unsupported(response):
-            return
-        yield from super().parse_response(response)
-
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Optional[Any]
-    ) -> Optional[Any]:
-        if self._is_rpos_unsupported(response):
-            return None
-        return super().get_next_page_token(response, previous_token)
 
 
 class VirtualTerminalTransactionsStream(SpotOnStream):
